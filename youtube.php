@@ -15,64 +15,122 @@
  * Domain Path:       /languages
  */
 
-// Custom Action Hook : lapor_pak
-class Laporan {
-    function lapor_pak(){
-        echo "Lapor Pak RT 123!";
+// wp_enqueue_scripts
+function my_youtube_plugin_scripts(){
+    // 3rd party library.
+//    wp_enqueue_style('bootstrap', 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css');
+//    wp_enqueue_style('tailwind', 'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css');
+//    wp_enqueue_style('fontawesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+
+    // Custom styles and scripts.
+//    wp_enqueue_style('my-youtube-plugin-style', plugins_url('style-main.css', __FILE__));
+}
+add_action('wp_enqueue_scripts', 'my_youtube_plugin_scripts');
+
+// init
+function custom_init_function(){
+    // Register Custom Post Type
+    register_post_type( 'book',
+        array(
+            'labels'      => array(
+                'name'          => __( 'Books', 'text-domain' ),
+                'singular_name' => __( 'Book', 'text-domain' ),
+            ),
+            'public'      => true,
+            'has_archive' => true,
+        )
+    );
+
+    // Register Custom Taxonomy
+    register_taxonomy( 'genre', array( 'book' ),
+        array(
+            'labels'      => array(
+                'name'          => __( 'Genres', 'text-domain' ),
+                'singular_name' => __( 'Genre', 'text-domain' ),
+            ),
+            'public'      => true,
+            'hierarchical' => true,
+        )
+    );
+    flush_rewrite_rules();
+}
+add_action('init', 'custom_init_function');
+
+// wp_head
+function custom_wp_head(){
+    ?>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=YOUR_ANALYTICS_ID"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'YOUR_ANALYTICS_ID');
+    </script>
+    <?php
+}
+add_action('wp_head', 'custom_wp_head');
+
+// wp_footer
+function custom_wp_footer(){
+    // Get the current post URL
+    $post_url = urlencode( get_permalink() );
+
+    // Get the current post title
+    $post_title = urlencode( get_the_title() );
+
+    // Output the social sharing buttons
+    ?>
+    <div class="social-sharing-buttons">
+        <a href="https://www.facebook.com/sharer.php?u=<?php echo $post_url; ?>" target="_blank" rel="noopener noreferrer">Share on Facebook</a>
+        <a href="https://twitter.com/intent/tweet?url=<?php echo $post_url; ?>&text=<?php echo $post_title; ?>" target="_blank" rel="noopener noreferrer">Share on Twitter</a>
+        <a href="https://www.linkedin.com/shareArticle?url=<?php echo $post_url; ?>&title=<?php echo $post_title; ?>" target="_blank" rel="noopener noreferrer">Share on LinkedIn</a>
+    </div>
+    <?php
+}
+add_action('wp_footer', 'custom_wp_footer');
+
+// admin_init
+function custom_admin_init(){
+    // 3rd party library.
+//    wp_enqueue_style('bootstrap', 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css');
+//    wp_enqueue_style('tailwind', 'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css');
+//    wp_enqueue_style('fontawesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+
+    // Custom styles and scripts.
+//    wp_enqueue_style('my-youtube-plugin-style', plugins_url('style-main.css', __FILE__));
+}
+add_action('admin_init', 'custom_admin_init');
+
+// save_post
+function custom_save_post( $post_id ){
+    if( 19 === $post_id && 'book' === get_post_type($post_id) ){
+        update_post_meta( $post_id, 'captain', 'kirk' );
     }
 }
-add_action('lapor_pak_class', array( new Laporan, 'lapor_pak' ));
+add_action('save_post', 'custom_save_post', 10, 1);
 
-
-
-
-// Filter Custom Filters : salam_lapor_pak
-function filter_salam_lapor_pak($salam){
-    return str_replace('Pak RT', 'Bu RT', $salam);
+// template_redirect
+function custom_template_redirect(){
+    global $post;
+    if( 'book' === $post->post_type && !is_user_logged_in() ){
+        wp_redirect( home_url() );
+        exit;
+    }
 }
-add_filter('salam_lapor_pak', 'filter_salam_lapor_pak');
+add_action('template_redirect', 'custom_template_redirect');
 
-
-// Custom Action Hook : lapor_pak
-function lapor_pak(){
-    echo apply_filters('salam_lapor_pak', "Lapor Pak RT!");
+// wp_login
+function custom_wp_login(){
+//    wp_redirect( home_url() );
+//    exit;
 }
-add_action('lapor_pak', 'lapor_pak');
+add_action('wp_login', 'custom_wp_login');
 
-
-// Action Hook : Init
-function fungsi_init(){
-    do_action('lapor_pak');
+// pre_get_posts
+function custom_pre_get_posts( $query ){
+    if ( $query->is_search() ) {
+        $query->set('post_type', array('post')); // Exclude custom post types from search
+    }
 }
-add_action('init', 'fungsi_init');
-
-
-
-
-// Action Hook : wp_head
-function fungsi_genteng(){
-    echo "<div style='color:red;'>PAKAI GENTENG ASPAL!</div>";
-}
-add_action('wp_head', 'fungsi_genteng');
-
-// Action Hook : wp_footer
-function fungsi_sepiteng(){
-    echo "<div style='color:blue;'>PAKAI SEPITENG!</div>";
-}
-add_action('wp_footer', 'fungsi_sepiteng');
-
-
-
-
-// Filter Hook : the_content
-function filter_the_content($content){
-//    return 'PREFIX' . $content . 'SUFFIX';
-    return str_replace('WordPress', 'WP', $content);
-}
-add_filter('the_content', 'filter_the_content');
-
-// Filter Hook : the_title
-function filter_the_title($title){
-    return str_replace('world', 'agung', $title);
-}
-add_filter('the_title', 'filter_the_title');
+add_action('pre_get_posts', 'custom_pre_get_posts', 10, 1);
